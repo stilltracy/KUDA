@@ -11,8 +11,9 @@
 
 #include <stdio.h>
 #include <cuPrintf.cu>
-#include <shrUtils.h>
-#include "cutil_inline.h"
+//#include <shrUtils.h>
+//#include "cutil_inline.h"
+#include <helper_cuda.h>
 
 //The macro CUPRINTF is defined for architectures
 //with different compute capabilities.

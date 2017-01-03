@@ -7,9 +7,9 @@
 // #define MAINEXEC
 
 static PIN_LOCK lock;
-#define GLB_LOCK_INIT()		InitLock(&lock)
-#define GLB_LOCK()			GetLock(&lock, 1);
-#define GLB_UNLOCK()		ReleaseLock(&lock);
+#define GLB_LOCK_INIT()		PIN_InitLock(&lock)
+#define GLB_LOCK()			PIN_GetLock(&lock, 1);
+#define GLB_UNLOCK()		PIN_ReleaseLock(&lock);
 
 /************************************************/
 

@@ -17,9 +17,11 @@
 #include <stdint.h>
 #include <sys/time.h>
 
-#include <cutil_inline.h>
+//#include <cutil_inline.h>
+#include <helper_cuda.h>
 #include <vector_types.h>
-#include <cutil_math.h>
+#include <helper_math.h>
+//#include <cutil_math.h>
 
 #include "bloom.h"
 #include "eventlist_common.h"

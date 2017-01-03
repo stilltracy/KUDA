@@ -1,6 +1,6 @@
 
 # include paths to KUDA, PIN, and CUDA
-include paths.config
+include ../paths.config
 
 
 DEBUG=1
@@ -45,7 +45,8 @@ endif
 ##############################################################
 
 
-TOOL_ROOTS = lockTool goldilocks vectorClock trace djitplus fasttrack eraser transactionalmem
+TOOL_ROOTS = lockTool goldilocks vectorClock trace djitplus fasttrack eraser 
+#transactionalmem
 STATIC_TOOL_ROOTS =
 APP_NAMES = 
 

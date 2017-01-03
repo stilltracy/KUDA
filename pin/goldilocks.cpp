@@ -166,7 +166,7 @@ PIN_LOCK lock;
  {
 
 
- GetLock(&lock, 1);
+ PIN_GetLock(&lock, 1);
 
  // pthreadAddrMap[addr]= totalThreads;
 
@@ -177,7 +177,7 @@ PIN_LOCK lock;
  //myfile<< "thread "<<  totalThreads-1 << " is created by "<< threadId<<endl;
 
 
- ReleaseLock(&lock);
+ PIN_ReleaseLock(&lock);
 
 
 
@@ -191,7 +191,7 @@ VOID AfterThreadCreate(VOID* addr, THREADID threadId) {
 	newEvent.threadId = threadId;
 	newEvent.value = totalThreads;
 	newEvent.kind = 0;
-	GetLock(&lock, 1);
+	PIN_GetLock(&lock, 1);
 
 	eventList.push_back(newEvent);
 	ADDRINT value;
@@ -202,11 +202,11 @@ VOID AfterThreadCreate(VOID* addr, THREADID threadId) {
 
 	myfile << "thread " << totalThreads - 1 << " is created by " << threadId
 			<< endl;
-	ReleaseLock(&lock);
+	PIN_ReleaseLock(&lock);
 }
 
 VOID AfterThreadJoin(ADDRINT addr, THREADID threadId) {
-	GetLock(&lock, 1);
+	PIN_GetLock(&lock, 1);
 	event newEvent;
 	newEvent.threadId = threadId;
 	newEvent.value = pthreadValMap[addr];
@@ -216,14 +216,14 @@ VOID AfterThreadJoin(ADDRINT addr, THREADID threadId) {
 
 	myfile << "thread " << newEvent.value << " is joined by " << threadId
 			<< "   pthread value: " << addr << endl;
-	ReleaseLock(&lock);
+	PIN_ReleaseLock(&lock);
 }
 
 VOID AfterLock(VOID* addrP, THREADID threadId) {
-	int addr = (int) addrP;
+	uint64_t addr = reinterpret_cast<uint64_t>( addrP);
 
 	if (addr > 0) {
-		GetLock(&lock, 1);
+		PIN_GetLock(&lock, 1);
 
 		lockMap[addr]++;
 		if (lockMap[addr] == 2)
@@ -237,15 +237,15 @@ VOID AfterLock(VOID* addrP, THREADID threadId) {
 		eventList.push_back(newEvent);
 		myfile << "thread " << threadId << " entered pthread_mutex_lock "
 				<< addr << endl;
-		ReleaseLock(&lock);
+		PIN_ReleaseLock(&lock);
 	}
 
 }
 
 VOID AfterWait(VOID* addrP, THREADID threadId) {
-	int addr = (int) addrP;
+	uint64_t addr = reinterpret_cast<uint64_t>( addrP);
 
-	GetLock(&lock, 1);
+	PIN_GetLock(&lock, 1);
 
 	lockMap[addr]++;
 	event newEvent;
@@ -257,14 +257,14 @@ VOID AfterWait(VOID* addrP, THREADID threadId) {
 			<< endl;
 
 	eventList.push_back(newEvent);
-	ReleaseLock(&lock);
+	PIN_ReleaseLock(&lock);
 
 }
 
 VOID BeforeWait(VOID* addrP, THREADID threadId) {
-	int addr = (int) addrP;
+	uint64_t addr = reinterpret_cast<uint64_t>( addrP);
 
-	GetLock(&lock, 1);
+	PIN_GetLock(&lock, 1);
 
 	lockMap[addr]--;
 	event newEvent;
@@ -276,14 +276,14 @@ VOID BeforeWait(VOID* addrP, THREADID threadId) {
 			<< endl;
 	eventList.push_back(newEvent);
 
-	ReleaseLock(&lock);
+	PIN_ReleaseLock(&lock);
 
 }
 
 VOID BeforeUnlock(VOID* addrP, THREADID threadId) {
-	int addr = (int) addrP;
+	uint64_t addr = reinterpret_cast<uint64_t>( addrP);
 	if (addr > 0) {
-		GetLock(&lock, 1);
+		PIN_GetLock(&lock, 1);
 		event newEvent;
 		newEvent.threadId = threadId;
 		newEvent.value = (int) addr;
@@ -296,7 +296,7 @@ VOID BeforeUnlock(VOID* addrP, THREADID threadId) {
 		eventList.push_back(newEvent);
 		myfile << "thread " << threadId << " leaved pthread_mutex_lock "
 				<< addr << endl;
-		ReleaseLock(&lock);
+		PIN_ReleaseLock(&lock);
 
 	}
 
@@ -392,7 +392,7 @@ VOID MemWrite(ADDRINT ip, ADDRINT addr, THREADID threadId) {
 	newInfo.pos = eventList.size();
 	newInfo.LS = LS;
 
-	GetLock(&lock, 1);
+	PIN_GetLock(&lock, 1);
 	if (it == addressMap.end()) {
 		map<THREADID, info> readNewInfo;
 		addressMap[addr].writeInfo = newInfo;
@@ -413,7 +413,7 @@ VOID MemWrite(ADDRINT ip, ADDRINT addr, THREADID threadId) {
 		addressMap[addr].writeInfo = newInfo;
 
 	}
-	ReleaseLock(&lock);
+	PIN_ReleaseLock(&lock);
 
 }
 
@@ -432,7 +432,7 @@ VOID MemRead(ADDRINT ip, ADDRINT addr, THREADID threadId) {
 	newInfo.pos = eventList.size();
 	newInfo.LS = LS;
 
-	GetLock(&lock, 1);
+	PIN_GetLock(&lock, 1);
 	if (it == addressMap.end()) {
 		addressMap[addr].readInfo[threadId] = newInfo;
 		info wInfo;
@@ -450,7 +450,7 @@ VOID MemRead(ADDRINT ip, ADDRINT addr, THREADID threadId) {
 		addressMap[addr].readInfo[threadId] = newInfo;
 
 	}
-	ReleaseLock(&lock);
+	PIN_ReleaseLock(&lock);
 
 }
 
@@ -611,7 +611,7 @@ int main(INT32 argc, CHAR **argv) {
 	myfile.open(KnobOutputFile.Value().c_str());
 
 	// Initialize the pin lock
-	InitLock(&lock);
+	PIN_InitLock(&lock);
 
 	PIN_InitSymbols();
 

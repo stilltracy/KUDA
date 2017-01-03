@@ -149,10 +149,10 @@ VOID ThreadStart(THREADID threadId, CONTEXT *ctxt, INT32 flags, VOID *v)
   newEvent.kind= 0;
   
   
-  GetLock(&lock, 1);  
+  PIN_GetLock(&lock, 1);  
   osThreadMap[PIN_GetTid()]=threadId;
   eventList.push_back(newEvent);
-  ReleaseLock(&lock);
+  PIN_ReleaseLock(&lock);
   
   myfile<< "thread " << threadId <<" starts"<<endl;
   
@@ -163,11 +163,11 @@ VOID ThreadCreate(VOID* addr, THREADID threadId)
 {
   
   
-  GetLock(&lock, 1);
+  PIN_GetLock(&lock, 1);
   pthreadAddrMap[(int) addr]= totalThreads;
   b= (int) addr;
   totalThreads++;
-  ReleaseLock(&lock);
+  PIN_ReleaseLock(&lock);
   myfile<< "thread "<<  totalThreads-1 << " is created by "<< threadId <<endl;
   
   
@@ -180,9 +180,9 @@ VOID ThreadJoin(VOID* addr, THREADID threadId)
   newEvent.value= pthreadValMap[(UINT32) addr];
   newEvent.kind= 1;
   
-  GetLock(&lock, 1);
+  PIN_GetLock(&lock, 1);
   eventList.push_back(newEvent);
-  ReleaseLock(&lock);
+  PIN_ReleaseLock(&lock);
   
   myfile<< "thread " << newEvent.value << " is joined by "<< threadId <<endl;
   
@@ -206,9 +206,9 @@ VOID BeforeLock( VOID* addrP, THREADID threadId )
     newEvent.kind= 2;
    
     
-    GetLock(&lock, 1);
+    PIN_GetLock(&lock, 1);
     eventList.push_back(newEvent);
-    ReleaseLock(&lock);
+    PIN_ReleaseLock(&lock);
   }
   
 }
@@ -228,9 +228,9 @@ VOID BeforeUnlock( VOID* addrP, THREADID threadId)
     newEvent.value= (int) addr;
     newEvent.kind= 3;
     
-    GetLock(&lock, 1);
+    PIN_GetLock(&lock, 1);
     eventList.push_back(newEvent);
-    ReleaseLock(&lock);
+    PIN_ReleaseLock(&lock);
     
   }
   //myfile<< "thread " << threadId <<" leaved pthread_mutex_lock "<< addr << endl;
@@ -325,7 +325,7 @@ VOID CheckHappensBefore(VOID *ip,VOID *addr, info *info1, info *info2)
 
 VOID TracePthread(VOID* ip, VOID* add,INT32 size,THREADID threadId, bool isWrite)
 {
-  GetLock(&lock, 1);
+  PIN_GetLock(&lock, 1);
   map<int,int>::iterator it;
 
   for ( it=pthreadAddrMap.begin() ; it != pthreadAddrMap.end(); it++ )
@@ -340,7 +340,7 @@ VOID TracePthread(VOID* ip, VOID* add,INT32 size,THREADID threadId, bool isWrite
   }
 
   
-  ReleaseLock(&lock);
+  PIN_ReleaseLock(&lock);
 }
 
 
@@ -366,7 +366,7 @@ VOID MemAccess(VOID* ip, VOID* add,INT32 size,THREADID threadId, bool isWrite,bo
   newInfo.pos= eventList.size();
   newInfo.LS= LS;
   
-   GetLock(&lock, 1);
+   PIN_GetLock(&lock, 1);
     
   if(it == addressMap.end() )
   { 
@@ -423,7 +423,7 @@ VOID MemAccess(VOID* ip, VOID* add,INT32 size,THREADID threadId, bool isWrite,bo
     
   }
   
-  ReleaseLock(&lock);   
+  PIN_ReleaseLock(&lock);   
   
   
   
@@ -647,7 +647,7 @@ int main(INT32 argc, CHAR **argv)
   myfile.open (KnobOutputFile.Value().c_str());
   // Initialize the pin lock
  
-  //InitLock(&lock);
+  //PIN_InitLock(&lock);
   
   // Initialize pin
   if (PIN_Init(argc, argv)) return Usage();

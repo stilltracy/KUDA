@@ -1,0 +1,1 @@
+nvcc -I/usr/local/cuda-7.5/samples/common/inc/ -I. -I../inc -Xcompiler -fPIC goldilocks.cu -shared -o libkuda.so

@@ -50,16 +50,16 @@ KNOB<string> KnobOutputFile(KNOB_MODE_WRITEONCE, "pintool","o", "output", "speci
 
 typedef struct
 {
-  vector<int> readVector;
-  vector<int> writeVector;
+  vector<uint64_t> readVector;
+  vector<uint64_t> writeVector;
   
 }address;
 
-map<int, address> addressMap;  
+map<uint64_t, address> addressMap;  
 
-map<int, vector<int> > lockVectors;
+map<uint64_t, vector<uint64_t> > lockVectors;
 
-vector<vector<int> > threadVectors;
+vector<vector<uint64_t> > threadVectors;
 
 
 
@@ -94,10 +94,10 @@ VOID EmitMem(VOID * ea, INT32 size);
 VOID ThreadStart(THREADID threadId, CONTEXT *ctxt, INT32 flags, VOID *v)
 {
 
-  GetLock(&lock, 1);  
+  PIN_GetLock(&lock, 1);  
  
   totalThreads++;
-  vector <int> clockVector;
+  vector <uint64_t> clockVector;
   
   for(unsigned int i=0; i<totalThreads; i++)
   {
@@ -113,7 +113,7 @@ VOID ThreadStart(THREADID threadId, CONTEXT *ctxt, INT32 flags, VOID *v)
   }
   
   threadVectors.push_back(clockVector);
-  ReleaseLock(&lock);
+  PIN_ReleaseLock(&lock);
   
   myfile<< "thread " << threadId <<" starts"<<endl;
   
@@ -129,11 +129,11 @@ VOID ThreadFini(THREADID threadId, const CONTEXT *ctxt, INT32 code, VOID *v)
 VOID BeforeLock( VOID* addrP, THREADID threadId )
 { 
  
-  int addr=(int) addrP;
+  uint64_t addr= reinterpret_cast<uint64_t>(addrP );
   if(addr>0)
   {
   
-  GetLock(&lock, 1);
+  PIN_GetLock(&lock, 1);
   unsigned  int size1=threadVectors[threadId].size();
   unsigned  int size2=lockVectors[addr].size();
   
@@ -160,7 +160,7 @@ VOID BeforeLock( VOID* addrP, THREADID threadId )
   }
   }
   
-  ReleaseLock(&lock);
+  PIN_ReleaseLock(&lock);
   
   //myfile<< "thread " << threadId <<" entered pthread_mutex_lock "<< addr << endl;
   
@@ -194,10 +194,10 @@ VOID BeforeLock( VOID* addrP, THREADID threadId )
 VOID BeforeUnlock( VOID* addrP, THREADID threadId)
 {
   
-  int addr=(int) addrP;
+  uint64_t addr=reinterpret_cast<uint64_t>( addrP);
   if(addr>0)
   {
-  GetLock(&lock, 1);
+  PIN_GetLock(&lock, 1);
   unsigned int size1=threadVectors[threadId].size();
   unsigned int size2=lockVectors[addr].size();
   
@@ -217,12 +217,12 @@ VOID BeforeUnlock( VOID* addrP, THREADID threadId)
       lockVectors[addr].at(i)= threadVectors[threadId].at(i);
     }
   threadVectors[threadId].at(threadId)= threadVectors[threadId].at(threadId)+1;
-  ReleaseLock(&lock);
+  PIN_ReleaseLock(&lock);
   }
  
 } 
 
-bool checkVectors(vector<int> v1, vector<int> v2)
+bool checkVectors(vector<uint64_t> v1, vector<uint64_t> v2)
 {
   unsigned int size1=v1.size();
   unsigned int size2=v2.size();
@@ -254,10 +254,10 @@ bool checkVectors(vector<int> v1, vector<int> v2)
 
 VOID MemAccess(VOID* ip, VOID* add,INT32 size,THREADID threadId, bool isWrite,bool isPrefetch)
 {
-  int addr= (int) add;
+  uint64_t addr= reinterpret_cast<uint64_t>( add);
   unsigned int i;
   
-  map<int, address >::iterator it;
+  map< uint64_t, address >::iterator it;
   
   it= addressMap.find(addr);
   if(it == addressMap.end())
@@ -265,8 +265,8 @@ VOID MemAccess(VOID* ip, VOID* add,INT32 size,THREADID threadId, bool isWrite,bo
     
     
       address tmp;
-      vector<int> realVector;
-      vector<int> tmpVector;
+      vector<uint64_t> realVector;
+      vector<uint64_t> tmpVector;
       
       for(i=0;i<totalThreads;i++)
       {
@@ -407,7 +407,7 @@ VOID MemWrite(VOID * ip,THREADID threadId)
 
 VOID TestMalloc(VOID* ip, VOID* addrP, THREADID threadId, ADDRINT stkPtr )
 {
-  int addr= (int) addrP;
+  uint64_t addr= reinterpret_cast<uint64_t>( addrP);
    if(addr==134521044)
   {
     myfile<<"malloc"<<endl;
@@ -418,7 +418,7 @@ VOID TestMalloc(VOID* ip, VOID* addrP, THREADID threadId, ADDRINT stkPtr )
   //if ( (((ADDRINT) addr < threads[threadId].stackBase )&&  ((ADDRINT) addr> stkPtr )))
   //{
   /*
-    GetLock(&lock,1);
+    PIN_GetLock(&lock,1);
     
   map<int, address >::iterator it;
   
@@ -433,7 +433,7 @@ VOID TestMalloc(VOID* ip, VOID* addrP, THREADID threadId, ADDRINT stkPtr )
     addressMap[(int)addr].writeInfo=writeNewInfo;
     
   }
-     ReleaseLock(&lock);   
+     PIN_ReleaseLock(&lock);   
     //myfile<< "MALLOC  " << addr << "  " <<threadId << endl;
     */
     //}
@@ -593,7 +593,7 @@ INT32 Usage()
 int main(INT32 argc, CHAR **argv)
 {
   // Initialize the pin lock
-  InitLock(&lock);
+  PIN_InitLock(&lock);
   
   // Initialize pin
   if (PIN_Init(argc, argv)) return Usage();
