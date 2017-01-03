@@ -1,0 +1,526 @@
+<?xml version="1.0" encoding="UTF-8"?>
+    <!--
+    ########################################################################
+    # TODO: 
+    # * Design a speed up for offline mode!
+    # * The output files could be mailed to me, with tag [JUDA]
+    # * MonteCarlo cannot read input data file?!
+    # *
+    ########################################################################
+    -->
+<project basedir="." default="test-all" name="ant script for experiments">
+    <property environment="env"/>
+    <property name="kuda.home.java" value="${env.KUDAHOME}/java"/>
+	<property name="kuda.exp" value="${env.KUDAHOME}/experiments"/>
+	<tstamp/>
+	 
+    <available file="${kuda.home.java}/lib/ant-contrib.jar" property="lib.available"/>
+	
+    <!--
+    ########################################################################
+    # For enabling several ant tasks
+    ########################################################################
+    -->
+
+    <taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+            <pathelement location="${kuda.home.java}/lib/ant-contrib.jar"/>
+        </classpath>
+    </taskdef>
+
+    <!--
+    ########################################################################
+    # Delete Scratches
+    ########################################################################
+    -->
+
+    <target name="clean!">
+        <delete dir="${kuda.exp}"/>
+    </target>
+
+    <!--
+    ########################################################################
+    # Build Kuda
+    ########################################################################
+    -->
+    
+    <target name="build-kuda" depends="">
+    	<ant antfile="${kuda.home.java}/build.xml"
+             dir="${kuda.home.java}"
+             target="build"
+             inheritAll="true"/>
+    </target>
+    
+    <!--
+    ########################################################################
+    # Build Benches
+    ########################################################################
+    -->
+    
+    <target name="build-bench" depends="">
+    	<ant antfile="${kuda.home.java}/build.xml"
+             dir="${kuda.home.java}"
+             target="build-bench"
+             inheritAll="true"/>
+    </target>
+    
+	<!--
+    ########################################################################
+    # Run all tests 
+    ########################################################################
+    -->
+
+    <target name="test-all" depends="" description="runs all tests available, run before starting large experiments">
+    	<var name="target.name" value=""/>
+	    <for
+	    	list="test,test-rr,test-rr-offline"
+	    	param="bench">
+	  		<sequential>
+	  			<var name="target.name" value="@{bench}"/>
+	  			<var name="kuda.exp.type" value="@{bench}"/>
+	    		<ant antfile="${kuda.home.java}/build.xml"
+		             dir="${kuda.home.java}"
+		             target="${target.name}"
+		             inheritAll="true"/>
+	  		</sequential>
+		</for>
+	</target>
+    	
+    <!--
+    ########################################################################
+    # Run JavaGrandeBenches={ForkJoin,Barrier,Sync,Crypt,Lufact,Series,
+    # SOR,SparseMatrixMult,MolDyn,MonteCarlo,RayTracer}
+    ########################################################################
+    -->
+    
+    <target name="run-jgf" depends="">
+    	<var name="target.name" value=""/>
+	    <for
+	    	list="sync,crpt,lufa,four,sor,spmm,mdyn,rayt"
+	    	param="bench"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="target.name" value="@{bench}"/>
+	  			<var name="kuda.exp.type" value="@{bench}"/>
+	    		<antcall target="run-bench">
+	    			<param name="bench.name" value="${target.name}"/>
+	    		</antcall>
+	  		</sequential>
+		</for>
+	</target>
+	
+    <!--
+    ########################################################################
+    # Run BasicBenches={philo,Scimark2,TspX,Btest}
+    ########################################################################
+    -->
+	
+	<target name="run-bsc" depends="" description="Run basic benchmarks">
+    	<var name="target.name" value=""/>
+	    <for
+	    	list="phil,tsp1,tsp2,tsp3,tsp4,tsp5,tsp6,tsp7,tsp8,tsp9,tspx,sci"
+	    	param="bench"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="target.name" value="@{bench}"/>
+	  			<var name="kuda.exp.type" value="@{bench}"/>
+	    		<antcall target="run-bench">
+	    			<param name="bench.name" value="${target.name}"/>
+	    		</antcall>
+	  		</sequential>
+		</for>
+	</target>
+	
+    <!--
+    ########################################################################
+    # Run Galois={BarnesHut,DelaunayRefinement,DelaunayTriangulation}
+    ########################################################################
+    -->
+	
+	<target name="run-gal" depends="">
+    	<var name="target.name" value=""/>
+	    <for
+	    	list="dtri,dref,bhut"
+	    	param="bench"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="target.name" value="@{bench}"/>
+	  			<var name="kuda.exp.type" value="@{bench}"/>
+	    		<antcall target="run-bench">
+	    			<param name="bench.name" value="${target.name}"/>
+	    		</antcall>
+	  		</sequential>
+		</for>
+	</target>
+	
+    <!--
+    ########################################################################
+    Run Dacapo={Eclipse,Lusearch,Xalan,Avrora,Batik,Fop,H2,Jython,Luindex,
+    Pmd,Sunflow,Tomcat,Tradebeans,Tradesoap}
+    ########################################################################
+    -->
+    
+	<target name="run-dcp" depends="">
+    	<var name="target.name" value=""/>
+	    <for
+	    	list="avr,btk,clps,fop,h2,jyth,lui,lus,pmd,flow,tcat,bean,soap,xlan"
+	    	param="bench"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="target.name" value="@{bench}"/>
+	  			<var name="kuda.exp.type" value="@{bench}"/>
+	    		<antcall target="run-bench">
+	    			<param name="bench.name" value="${target.name}"/>
+	    		</antcall>
+	  		</sequential>
+		</for>
+	</target>
+    
+    <!--
+    ########################################################################
+    Run Bench={abc-1,abc-2,abc-3}
+    ########################################################################
+    -->
+	
+	<target name="run-bench" 
+	 depends="" 
+	 description=
+	 "runs given benchmark for all input sizes">
+		<property name="bench.name" value="phil"/>
+		<var name="kuda.exp.filename" value="${kuda.exp}/${kuda.exp.suite}/exp_juda_${kuda.exp.rrtool}_${kuda.exp.type}_${kuda.exp.size}_${kuda.exp.threads}.txt"/>
+		<for
+	    	list="1,2,3"
+	    	param="iter"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.size" unset="true"/>
+	  			<property name="kuda.exp.size" value="@{iter}"/>
+	  			<var name="kuda.exp.filename" value="${kuda.exp}/${kuda.exp.suite}/exp_juda_${kuda.exp.rrtool}_${kuda.exp.type}_${kuda.exp.size}_${kuda.exp.threads}.txt"/>
+				<ant antfile="${kuda.home.java}/build.xml"
+		             dir="${kuda.home.java}"
+		             target="${bench.name}-@{iter}"
+		             inheritAll="true"/>
+		        <!--antcall target="tofile">
+		        	<param name="kuda.exp.filename" 
+		        	value="${kuda.exp}/exp_juda_${kuda.exp.rrtool}_${kuda.exp.suite}_${kuda.exp.type}_${kuda.exp.size}_${kuda.exp.threads}.txt"/>
+		        	<param name="kuda.exp" value="${kuda.exp.filename}"/>
+		        </antcall-->
+	  		</sequential>
+		</for>
+		<if>
+			<or>
+				<equals arg1="${bench.name}" arg2="tcat"/>
+				<equals arg1="${bench.name}" arg2="bean"/>
+				<equals arg1="${bench.name}" arg2="soap"/>
+				<equals arg1="${bench.name}" arg2="xlan"/>
+			</or>
+			<then>
+				<var name="kuda.exp.size" unset="true"/>
+				<property name="kuda.exp.size" value="4"/>
+				<ant antfile="${kuda.home.java}/build.xml"
+		             dir="${kuda.home.java}"
+		             target="${bench.name}-4"
+		             inheritAll="true"/>
+			</then>
+		</if>
+	</target>
+	
+	<!--
+    ########################################################################
+    Run with RRMain={-tool=rrtools Bench-x} 
+    ########################################################################
+    -->
+	
+	<target name="run-wtools" 
+	 depends="" 
+	 description=
+	 "runs given benchmark with all rrtools">
+		<property name="bench.name" value="phil"/>
+		<for
+	    	list="nop,eraser,kuda,hb,fasttrack,free"
+	    	param="tool"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.rrtool" unset="true"/>
+	  			<property name="kuda.exp.rrtool" value="@{tool}"/>
+	    		<antcall target="run-${bench.name}">
+	    			<param name="kuda.rrtool" value="@{tool}"/>
+	    		</antcall>
+	  		</sequential>
+		</for>
+	</target>   
+	
+	<!--
+    ########################################################################
+    Run targets with different #of threads RRMain={-tool=rrtools Bench-x -t NUMTHREADS}
+    ########################################################################
+    -->
+
+	<target name="run-bench-all" 
+	 depends="" 
+	 description=
+	 "runs given benchmark with different number of threads, input sizes, and tools">
+		<property name="bench.nthreads" value="8"/>
+		<for
+	    	list="8"
+	    	param="threads"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.threads" unset="true"/>
+	  			<property name="kuda.exp.threads" value="@{threads}"/>
+	    		<antcall target="run-wtools">
+	    			<param name="bench.nthreads" value="@{threads}"/>
+	    		</antcall>
+	  		</sequential>
+		</for>
+	</target>  
+	
+	<!--
+    ########################################################################
+    Run all benchmarks RRMain={-tool=rrtools abc-x -t NUMTHREADS}
+    ########################################################################
+    -->
+	
+	<target name="run-all" 
+	 depends="build-kuda" 
+	 description=
+	 "runs all benchmarks with different number of threads, input sizes, and tools">
+	 	<mkdir dir="${kuda.exp}"/>
+		<property name="bench.name" value="phil"/>
+		<property name="kuda.exp.rrtool" value=""/>
+		<property name="kuda.exp.suite" value=""/>
+		<property name="kuda.exp.type" value=""/>
+		<property name="kuda.exp.size" value=""/>
+		<property name="kuda.exp.threads" value=""/>	
+		<property name="kuda.exp.filename" value=""/>
+		<for
+	    	list="jgf,dcp,gal"
+	    	param="benches"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.suite" unset="true"/>
+	  			<property name="kuda.exp.suite" value="@{benches}"/>
+	  			<mkdir dir="${kuda.exp}/${kuda.exp.suite}"/>
+	    		<antcall target="run-${kuda.exp.suite}!">
+	    			<param name="bench.name" value="@{benches}"/>	
+	    		</antcall>
+	  		</sequential>
+		</for>
+		<!--
+		<var name="kuda.exp.suite" unset="true"/>
+	  	<property name="kuda.exp.suite" value="dcp"/>
+		<antcall target="run-wtools" description="predefined and unchangeable # of threads">
+   			<param name="bench.name" value="dcp"/>
+   		</antcall>
+   		-->
+   		<zip destfile="/experiments_${DSTAMP}_${TSTAMP}.zip" basedir="${kuda.exp}/*.zip"/>
+   		
+   		<!--mail mailhost="smtp.gmail.com" mailport="993" subject="[JUDA] all experiments">
+		  <from address="cbekar88@gmail.com"/>
+		  <replyto address="cbekar88@gmail.com"/>
+		  <to address="cbekar88@gmail.com"/>
+		  <message>Hi!
+		  The experiment has been completed!
+		  Have a nice holiday!
+		  Ant@Cadt
+		  </message>
+		  <attachments>
+		    <fileset dir="exp">
+		      <include name="/experiments.zip"/>
+			</fileset>
+			</attachments>
+		</mail-->
+		<!--javax.mail.internet.MimeMessage error!!!-->
+	</target>  
+
+	<target name="run-bsc!" 
+	 depends="build-kuda" 
+	 description=
+	 "runs bsc benchmarks with different number of threads, input sizes, and tools">
+	 	<mkdir dir="${kuda.exp}"/>
+		<property name="bench.name" value="phil"/>
+		<property name="kuda.exp.rrtool" value=""/>
+		<property name="kuda.exp.suite" value=""/>
+		<property name="kuda.exp.type" value=""/>
+		<property name="kuda.exp.size" value=""/>
+		<property name="kuda.exp.threads" value=""/>	
+		<property name="kuda.exp.filename" value=""/>
+		<for
+	    	list="bsc"
+	    	param="benches"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.suite" unset="true"/>
+	  			<property name="kuda.exp.suite" value="@{benches}"/>
+	  			<mkdir dir="${kuda.exp}/${kuda.exp.suite}"/>
+	    		<antcall target="run-bench-all">
+	    			<param name="bench.name" value="@{benches}"/>	
+	    		</antcall>
+	  		</sequential>
+		</for>
+		<zip destfile="/${kuda.exp}/${kuda.exp.suite}_${DSTAMP}_${TSTAMP}.zip" basedir="${kuda.exp}/${kuda.exp.suite}"/>
+	</target> 
+	
+	<target name="run-gal!" 
+	 depends="build-kuda" 
+	 description=
+	 "runs gal benchmarks with different number of threads, input sizes, and tools">
+	 	<mkdir dir="${kuda.exp}"/>
+		<property name="bench.name" value="phil"/>
+		<property name="kuda.exp.rrtool" value=""/>
+		<property name="kuda.exp.suite" value=""/>
+		<property name="kuda.exp.type" value=""/>
+		<property name="kuda.exp.size" value=""/>
+		<property name="kuda.exp.threads" value=""/>	
+		<property name="kuda.exp.filename" value=""/>
+		<for
+	    	list="gal"
+	    	param="benches"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.suite" unset="true"/>
+	  			<property name="kuda.exp.suite" value="@{benches}"/>
+	  			<mkdir dir="${kuda.exp}/${kuda.exp.suite}"/>
+	    		<antcall target="run-bench-all">
+	    			<param name="bench.name" value="@{benches}"/>	
+	    		</antcall>
+	  		</sequential>
+		</for>
+		<zip destfile="/${kuda.exp}/${kuda.exp.suite}_${DSTAMP}_${TSTAMP}.zip" basedir="${kuda.exp}/${kuda.exp.suite}"/>
+	</target> 
+	
+	<target name="run-jgf!" 
+	 depends="build-kuda" 
+	 description=
+	 "runs jgf benchmarks with different number of threads, input sizes, and tools">
+	 	<mkdir dir="${kuda.exp}"/>
+		<property name="bench.name" value="phil"/>
+		<property name="kuda.exp.rrtool" value=""/>
+		<property name="kuda.exp.suite" value=""/>
+		<property name="kuda.exp.type" value=""/>
+		<property name="kuda.exp.size" value=""/>
+		<property name="kuda.exp.threads" value=""/>	
+		<property name="kuda.exp.filename" value=""/>
+		<for
+	    	list="jgf"
+	    	param="benches"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.suite" unset="true"/>
+	  			<property name="kuda.exp.suite" value="@{benches}"/>
+	  			<mkdir dir="${kuda.exp}/${kuda.exp.suite}"/>
+	    		<antcall target="run-bench-all">
+	    			<param name="bench.name" value="@{benches}"/>	
+	    		</antcall>
+	  		</sequential>
+		</for>
+		<zip destfile="/${kuda.exp}/${kuda.exp.suite}_${DSTAMP}_${TSTAMP}.zip" basedir="${kuda.exp}/${kuda.exp.suite}"/>
+	</target> 
+
+	<target name="run-dcp!" 
+	 depends="build-kuda" 
+	 description=
+	 "runs dcp benchmarks with different number of threads, input sizes, and tools">
+	 	<mkdir dir="${kuda.exp}"/>
+		<property name="bench.name" value="phil"/>
+		<property name="kuda.exp.rrtool" value=""/>
+		<property name="kuda.exp.suite" value=""/>
+		<property name="kuda.exp.type" value=""/>
+		<property name="kuda.exp.size" value=""/>
+		<property name="kuda.exp.threads" value=""/>	
+		<property name="kuda.exp.filename" value=""/>
+		<for
+	    	list="dcp"
+	    	param="benches"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.suite" unset="true"/>
+	  			<property name="kuda.exp.suite" value="@{benches}"/>
+	  			<mkdir dir="${kuda.exp}/${kuda.exp.suite}"/>
+	    		<antcall target="run-bench-all">
+	    			<param name="bench.name" value="@{benches}"/>	
+	    		</antcall>
+	  		</sequential>
+		</for>
+		<zip destfile="/${kuda.exp}/${kuda.exp.suite}_${DSTAMP}_${TSTAMP}.zip" basedir="${kuda.exp}/${kuda.exp.suite}"/>
+	</target> 
+
+	<target name="run-mini!" 
+	 depends="clean!,build-kuda" 
+	 description=
+	 "runs mini benchmarks with different number of threads, input sizes, and tools">
+	 	<mkdir dir="${kuda.exp}"/>
+		<property name="bench.name" value="phil"/>
+		<property name="kuda.exp.rrtool" value=""/>
+		<property name="kuda.exp.suite" value=""/>
+		<property name="kuda.exp.type" value=""/>
+		<property name="kuda.exp.size" value=""/>
+		<property name="kuda.exp.threads" value=""/>	
+		<property name="kuda.exp.filename" value=""/>
+		<for
+	    	list="mini,mini,mini,mini,mini"
+	    	param="benches"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.suite" unset="true"/>
+	  			<property name="kuda.exp.suite" value="@{benches}"/>
+	  			<mkdir dir="${kuda.exp}/${kuda.exp.suite}"/>
+	    		<antcall target="run-comp">
+	    			<param name="bench.name" value="@{benches}"/>	
+	    		</antcall>
+	  		</sequential>
+		</for>
+		<zip destfile="/${env.KUDAHOME}/${kuda.exp.suite}_${DSTAMP}_${TSTAMP}.zip" basedir="${kuda.exp}/${kuda.exp.suite}"/>
+	</target>
+	
+	<!--
+    ########################################################################
+    Run with RRMain={-tool=rrtools Bench-x} 
+    ########################################################################
+    -->
+	
+	<target name="run-comp" 
+	 depends="" 
+	 description=
+	 "runs mini benchmark with kuda and fasttrack rrtools">
+	 <property name="bench.nthreads" value="8"/>
+		<for
+	    	list="kuda"
+	    	param="tool"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="kuda.exp.rrtool" unset="true"/>
+	  			<property name="kuda.exp.rrtool" value="@{tool}"/>
+	    		<antcall target="run-mini">
+	    			<param name="kuda.rrtool" value="@{tool}"/>
+	    		</antcall>
+	  		</sequential>
+		</for>
+	</target>
+
+    <!--
+    ########################################################################
+    Run Mini={}
+    ########################################################################
+    -->
+    
+	<target name="run-mini" depends="">
+    	<var name="target.name" value=""/>
+  	    <for
+	    	list="lufa-2,mdyn-1,rayt-1"
+	    	param="bench"
+	    	keepgoing="true">
+	  		<sequential>
+	  			<var name="target.name" value="@{bench}"/>
+	  			<var name="kuda.exp.type" value="@{bench}"/>
+	  			<var name="kuda.exp.threads" value="8"/>
+	  			<var name="kuda.exp.filename" value="${kuda.exp}/${kuda.exp.suite}/exp_juda_${kuda.exp.rrtool}_${kuda.exp.type}_${kuda.exp.threads}.txt"/>
+				<ant antfile="${kuda.home.java}/build.xml"
+		             dir="${kuda.home.java}"
+		             target="${target.name}"
+		             inheritAll="true"/>
+	  		</sequential>
+		</for>
+	</target>
+	
+</project>

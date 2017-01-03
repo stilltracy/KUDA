@@ -1,0 +1,1475 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="build" name="kuda">
+    <property environment="env"/>
+    <property name="kuda.home.java" value="${env.KUDAHOME}/java"/>
+    <!--echo message="KUDA home directory is: ${env.KUDAHOME}"/>
+    <echo message="OS: ${os.name}"/-->
+
+    <available file="${kuda.home.java}/rr/build/jar/RoadRunner.jar" property="rr.available"/>
+    <available file="${kuda.home.java}/lib/ant-contrib.jar" property="lib.available"/>
+    <available file="${rr.work.dir}/rrdump" property="rrdump.available"/>
+
+    <!--
+    ########################################################################
+    javac attributes
+    ########################################################################
+    -->
+
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
+
+    <!--
+    ########################################################################
+    Experiment Suite Properties
+    ########################################################################
+    -->
+
+    <property name="bench.nthreads" value="10"/>
+    <property name="gal.home" value="${kuda.home.java}/bench/Galois-2.0"/>
+    <property name="dcp.home" value="${kuda.home.java}/bench/dacapo"/>
+    <property name="sci.home" value="${kuda.home.java}/bench/scimark2"/>
+    <property name="elv.home" value="${kuda.home.java}/bench/elevator"/>
+    <property name="tsp.home" value="${kuda.home.java}/bench/tsp"/>
+    <property name="jgf1.home" value="${kuda.home.java}/bench/jgf_v1"/>
+    <property name="phil.home" value="${kuda.home.java}/bench/philo"/>
+
+    <!--
+    ########################################################################
+    for enabling several ant tasks
+    ########################################################################
+    -->
+
+    <taskdef resource="net/sf/antcontrib/antlib.xml">
+        <classpath>
+            <pathelement location="${kuda.home.java}/lib/ant-contrib.jar"/>
+        </classpath>
+    </taskdef>
+
+    <!--
+    ########################################################################
+    Kuda Classpath Definition
+    ########################################################################
+    -->
+
+    <path id="kuda.classpath">
+        <pathelement path="${kuda.home.java}/classes"/>
+        <fileset dir="${kuda.home.java}/lib">
+            <include name="**/*.jar"/>
+        </fileset>
+
+        <pathelement path="${kuda.home.java}/rr/classes"/>
+        <fileset dir="${kuda.home.java}/rr/build/jar">
+            <include name="**/*.jar"/>
+        </fileset>
+        <fileset dir="${kuda.home.java}/rr/jars">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+    
+    <!--
+    ########################################################################
+    Parallel Colt Classpath Definition
+    ########################################################################
+   
+
+    <path id="colt.cp">
+        <pathelement path="${kuda.home.java}/classes"/>
+        <fileset dir="${kuda.home.java}/bench/ParallelColt">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+     -->
+     
+    <!--
+    ########################################################################
+    Galois Classpath Definition
+    ########################################################################
+    -->
+
+    <path id="gal.cp">
+        <pathelement path="${gal.home}/classes"/>
+        <fileset dir="lib">
+            <include name="**/*.jar"/>
+        </fileset>
+    </path>
+
+    <!--
+    ########################################################################
+    DaCapo Classpath Definition
+    ########################################################################
+    -->
+
+    <path id="dcp.cp">
+        <pathelement path="${dcp.home}/dacapo-9.12-bach.jar"/>
+    </path>
+
+    <!--
+    ########################################################################
+    Scimark2 Classpath Definition
+    ########################################################################
+    -->
+
+    <path id="sci.cp">
+        <pathelement path="${sci.home}/scimark2.jar"/>
+    </path>
+
+    <!--
+    ########################################################################
+    Unzipping Archives
+    ########################################################################
+    -->
+
+    <target name="setup-lib" unless="lib.available">
+        <mkdir dir="${kuda.home.java}/lib"/>
+        <unzip src="${kuda.home.java}/download/lib.zip" dest="${kuda.home.java}/lib/">
+            <patternset>
+                <include name="**/*.jar"/>
+                <include name="**/*.jnilib"/>
+                <include name="**/*.so"/>
+            </patternset>
+            <mapper type="flatten"/>
+        </unzip>
+        <unzip src="${kuda.home.java}/download/lib2.zip" dest="${kuda.home.java}/rr/jars">
+            <patternset>
+                <include name="**/*.jar"/>
+            </patternset>
+            <mapper type="flatten"/>
+        </unzip>
+    </target>
+
+    <!--
+    ########################################################################
+    Delete Scratches
+    ########################################################################
+    -->
+
+    <target name="clean">
+        <delete dir="classes"/>
+        <delete file="kuda.jar"/>
+        <delete dir="${kuda.home.java}/lib"/>
+        <delete dir="${kuda.home.java}/bench/**/classes"/>
+        <delete dir="${kuda.home.java}/bench/**/work"/>
+    </target>
+
+    <!--
+    ########################################################################
+    Build Roadrunner
+    ########################################################################
+    -->
+
+    <target name="build-rr" depends="setup-lib" unless="rr.available">
+        <ant antfile="${kuda.home.java}/rr/build.xml"
+             dir="${kuda.home.java}/rr"
+             target="clean-build"
+             inheritAll="true"/>
+    </target>
+
+    <!--
+    ########################################################################
+    Build Benchmarks
+    ########################################################################
+    -->
+
+    <target name="build-bench" depends="">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+
+        <mkdir dir="${kuda.home.java}/bench/micro/classes"/>
+		<mkdir dir="${kuda.home.java}/bench/philo/classes"/>
+		<mkdir dir="${kuda.home.java}/bench/btest/classes"/>
+		
+        <javac debug="true" debuglevel="${debuglevel}"
+               destdir="${kuda.home.java}/bench/micro/classes"
+               source="${source}" target="${target}"
+               includeantruntime = "false">
+            <src path="${kuda.home.java}/bench/micro/src"/>
+            <classpath location="${kuda.home.java}/bench/micro/classes"/>
+        </javac>
+        
+        <javac debug="true" debuglevel="${debuglevel}"
+               destdir="${kuda.home.java}/bench/philo/classes"
+               source="${source}" target="${target}"
+               srcdir="${kuda.home.java}/bench/philo"
+               classpath="${kuda.home.java}/bench/philo/classes"
+               includeantruntime = "false">
+        </javac>
+
+        <javac debug="true" debuglevel="${debuglevel}"
+               destdir="${kuda.home.java}/bench/btest/classes"
+               source="${source}" target="${target}"
+               srcdir="${kuda.home.java}/bench/btest"
+               classpath="${kuda.home.java}/bench/btest/classes"
+               includeantruntime = "false">
+        </javac>
+        
+        <!--javac debug="true" debuglevel="${debuglevel}"
+               destdir="${kuda.home.java}/bench/hedc/classes"
+               source="${source}" target="${target}"
+               includes="${kuda.home.java}/bench/hedc/servlet-api.jar">
+            <src path="${kuda.home.java}/bench/hedc:${kuda.home.java}/bench/hedc/java/util:${kuda.home.java}/bench/hedc/ethz/util:${kuda.home.java}/bench/hedc/EDU/oswego/cs/dl/util/concurrent:${kuda.home.java}/bench/hedc/regexp"/>
+            <classpath location="${kuda.home.java}/bench/hedc/classes"/>
+        </javac-->
+
+        <copy todir="${kuda.home.java}/bench/micro/classes">
+            <fileset dir="${kuda.home.java}/bench/micro/src">
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+
+        <ant antfile="${jgf1.home}/build.xml"
+             dir="${jgf1.home}"
+             target="build"
+             inheritAll="true"/>
+
+        <ant antfile="${tsp.home}/build.xml"
+             dir="${tsp.home}"
+             target="build"
+             inheritAll="true"/>
+
+        <!--ant antfile="${elv.home}/build.xml"
+             dir="${elv.home}"
+             target="build"
+             inheritAll="true"/-->
+
+        <ant antfile="${sci.home}/build.xml"
+             dir="${sci.home}"
+             target="build"
+             inheritAll="true"/>
+
+    </target>
+
+    <target name="build" depends="setup-lib,build-rr,build-bench">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <mkdir dir="classes"/>
+        <javac debug="true" debuglevel="${debuglevel}"
+               destdir="${kuda.home.java}/classes"
+               source="${source}" target="${target}"
+               includeantruntime = "false">
+            <src path="${kuda.home.java}/src"/>
+            <classpath refid="kuda.classpath"/>
+        </javac>
+        <!-- <javah destdir="." class="kuda.KudaInterface"/> -->
+        <copy todir="${kuda.home.java}/classes">
+            <fileset dir="${kuda.home.java}/src">
+                <include name="**/*.properties"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <!--
+    ########################################################################
+    Project JAR
+    ########################################################################
+    -->
+
+    <target name="makejar" depends="build" description="make jar from classes">
+        <delete file="${kuda.home.java}/kuda.jar"/>
+        <jar basedir="${kuda.home.java}/classes" includes="**/*.class" destfile="${kuda.home.java}/kuda.jar"
+             manifest="MANIFEST.MF"/>
+    </target>
+
+    <!--
+    ########################################################################
+    Mutable Java Call
+    ########################################################################
+    -->
+
+    <target name="_java_" depends="" description="customized java task">
+        <!-- Begin Options -->
+        <fail unless="main.class"/>
+        <property name="main.class" value=""/>
+        <property name="main.args" value=""/>
+        <property name="jvm.args" value=""/>
+        <property name="main.classpath" value=""/>
+        <property name="work.dir" value="${kuda.home.java}/work"/>
+        <property name="kuda.exp.filename" value="${env.KUDAHOME}/experiments/deneme.txt"/>
+        <property name="kuda.exp.console" value="false"/>
+        <property name="kuda.exp.clean.before" value="false"/>
+        <!-- End Options -->
+
+
+        <!-- if ${kuda.exp.clean.before} is true, then delete the experiments file before starting the experiment -->
+        <if>
+            <equals arg1="${kuda.exp.clean.before}" arg2="true"/>
+            <then>
+                <delete file="${kuda.exp.filename}"/>
+            </then>
+        </if>
+
+
+        <mkdir dir="${work.dir}"/>
+        <echo message="${kuda.exp.filename}"/>
+        <stopwatch name="timer" action="start"/>
+        <java jvm="${env.JAVA_HOME}/bin/java"
+              classname="${main.class}"
+              fork="true" dir="${work.dir}"
+              output="${kuda.exp.filename}"
+              append="true">
+
+            <arg line="${main.args}"/>
+            <jvmarg line="${jvm.args} -ea -server -Xms1g -Xmx2g -XX:+AggressiveOpts -XX:MaxPermSize=256m -XX:+AggressiveHeap -XX:+UseParallelGC -XX:ParallelGCThreads=4"/>
+            <sysproperty key="java.library.path" path="${java.library.path}:${kuda.home.java}/lib"/>
+            <syspropertyset>
+                <!--<propertyref builtin="system"/>-->
+                <propertyref prefix="kuda."/>
+                <propertyref prefix="rr."/>
+                <propertyref prefix="RR_"/>
+                <propertyref prefix="env."/>
+            </syspropertyset>
+            <classpath>
+                <path refid="kuda.classpath"/>
+                <pathelement path="${main.classpath}"/>
+            </classpath>
+        </java>
+        <stopwatch name="timer" action="total"/>
+        <!--echo message="Running Time of ${main.class}(${main.args}): ${timer}${line.separator}Experiment output is written to the file: ${kuda.exp.filename}"/-->
+        <echo message="Running Time of ${main.class}(${main.args}): ${timer}${line.separator}" file="${kuda.exp.filename}" append="true" level="warning"/>
+
+        <!-- if ${kuda.exp.console} is true, then print the contents of the file to the console as well -->
+        <if>
+            <equals arg1="${kuda.exp.console}" arg2="true"/>
+            <then>
+                <exec executable="more">
+                    <arg value="${kuda.exp.filename}"/>
+                </exec>
+            </then>
+        </if>
+    </target>
+
+    <!--
+    ########################################################################
+    Roadrunner Runner
+    ########################################################################
+    -->
+
+    <target name="rr" depends="" description="run RoadRunner">
+        <!-- Begin Options -->
+        <fail unless="rr.main.class"/>
+        <fail unless="rr.bench.classpath"/>
+        <!-- -->
+        <property name="rr.main.class" value=""/>
+        <property name="rr.main.args" value=""/>
+        <property name="rr.tool" value="N"/>
+        <property name="rr.work.dir" value="${kuda.home.java}/work"/>
+        <property name="rr.bench.classpath" value=""/>
+        <!-- End Options -->
+
+        <!--<property name="RR_MODE" value="${env.RR_MODE}"/>-->
+        <!--<property name="RR_HOME" value="${env.RR_HOME}"/>-->
+        <!--<property name="RR_TOOLPATH" value="${env.RR_TOOLPATH}"/>-->
+
+        <property name="KUDA_CLASSPATH" refid="kuda.classpath"/>
+
+        <property name="RR_MODE" value="FAST"/>
+        <property name="RR_HOME" value="${kuda.home.java}/rr"/>
+        <property name="RR_TOOLPATH"
+                  value="${kuda.home.java}/classes/kuda/rrtool:${RR_HOME}/classes/tools:${RR_HOME}/classes/rr/simple"/>
+        <property name="RR_LOG_DIR" value="${rr.work.dir}/rrlog"/>
+
+        <if>
+            <equals arg1="${rrdump.available}" arg2="true"/>
+            <then>
+                <property name="RR_META_DATA" value="${rr.work.dir}/rrdump"/>
+                <property name="RR_DUMP_FLAG" value="-dump=${RR_META_DATA} -repository=${rr.bench.classpath}"/>
+            </then>
+            <else>
+                <property name="RR_DUMP_FLAG" value=""/>
+            </else>
+        </if>
+
+        <property name="RR_MAIN" value="rr.RRMain"/>
+        <property name="RR_ARGS"
+                  value="-quiet -noxml -maxTid=1024 -maxMem=1048576 -noTidGC -array=FINE -field=FINE -nobarrier -logs=${RR_LOG_DIR} ${RR_DUMP_FLAG} -classpath=${rr.bench.classpath} -toolpath=${RR_TOOLPATH} -tool=${rr.tool}"/>
+        <property name="RR_JAVAARGS" value="${RR_ARGS} ${rr.main.class} ${rr.main.args}"/>
+        <property name="RR_JVMARGS"
+                  value="-javaagent:${RR_HOME}/build/jar/rragent.jar -Xbootclasspath/p:${RR_HOME}/classes:${RR_HOME}/jars/java-cup-11a.jar:${RR_TOOLPATH}:${KUDA_CLASSPATH}"/>
+
+        <antcall target="_java_">
+            <param name="main.class" value="${RR_MAIN}"/>
+            <param name="main.args" value="${RR_JAVAARGS}"/>
+            <param name="jvm.args" value="${RR_JVMARGS}"/>
+            <param name="work.dir" value="${rr.work.dir}"/>
+        </antcall>
+    </target>
+
+    <!--
+    ########################################################################
+    Tool Runner on Roadrunner
+    ########################################################################
+    -->
+    <target name="kuda" description="run tools on Roadrunner">
+        <!-- Begin Options -->
+        <fail unless="kuda.main.class"/>
+        <fail unless="kuda.bench.classpath"/>
+        <!-- -->
+        <property name="kuda.main.class" value=""/>
+        <property name="kuda.main.args" value=""/>
+        <property name="kuda.work.dir" value="${kuda.home.java}/work"/>
+        <property name="kuda.rrtool" value="nop"/>
+        <var name="RR_TOOL" value=""/>
+        <!-- End Options -->
+        <if>
+            <!-- default case is where kuda.rrtool==free. This is equivalent to bench.type==free in the previous version. -->
+            <equals arg1="${kuda.rrtool}" arg2="free"/>
+            <then>
+                <antcall target="_java_">
+                    <param name="main.class" value="${kuda.main.class}"/>
+                    <param name="main.args" value="${kuda.main.args}"/>
+                    <param name="main.classpath" value="${kuda.bench.classpath}"/>
+                    <param name="work.dir" value="${kuda.work.dir}"/>
+                </antcall>
+            </then>
+            <else>
+                <if>
+                    <equals arg1="${kuda.rrtool}" arg2="kuda"/>
+                    <then>
+                        <var name="RR_TOOL" value="KUDA"/>
+                    </then>
+                    <elseif>
+                        <equals arg1="${kuda.rrtool}" arg2="eraser"/>
+                        <then>
+                            <var name="RR_TOOL" value="LS"/>
+                        </then>
+                    </elseif>
+                    <elseif>
+                        <equals arg1="${kuda.rrtool}" arg2="hb"/>
+                        <then>
+                            <var name="RR_TOOL" value="HB"/>
+                        </then>
+                    </elseif>
+                    <elseif>
+                        <equals arg1="${kuda.rrtool}" arg2="nop"/>
+                        <then>
+                            <var name="RR_TOOL" value="N"/>
+                        </then>
+                    </elseif>
+                    <elseif>
+                        <equals arg1="${kuda.rrtool}" arg2="fasttrack"/>
+                        <then>
+                            <var name="RR_TOOL" value="FT"/>
+                        </then>
+                    </elseif>
+                    <elseif>
+                        <equals arg1="${kuda.rrtool}" arg2="offline"/>
+                        <then>
+                            <var name="RR_TOOL" value="KUDALOG"/>
+                        </then>
+                    </elseif>
+                    <else>
+                    	<fail unless="${RR_TOOL}"/>
+                    </else>
+                </if>                  
+                <antcall target="rr">
+                    <param name="rr.main.class" value="${kuda.main.class}"/>
+                    <param name="rr.main.args" value="${kuda.main.args}"/>
+                    <param name="rr.work.dir" value="${kuda.work.dir}"/>
+                    <param name="rr.bench.classpath" value="${kuda.bench.classpath}"/>
+                    <param name="rr.tool" value="${RR_TOOL}"/>
+                </antcall>
+                <if>
+                    <equals arg1="${RR_TOOL}" arg2="KUDALOG"/>
+                    <then>
+                        <antcall target="offline"/>
+                    </then>
+                </if>
+            </else>
+        </if>
+    </target>
+    
+    <!--
+    ########################################################################
+    Run RR with KudaOffline from 
+    ########################################################################
+    -->
+
+    <target name="offline" description="kuda runs offline">
+        <antcall target="_java_">
+            <param name="main.class" value="kuda.KudaOffline"/>
+            <param name="work.dir" value="${kuda.home.java}/work"/>
+        </antcall>
+    </target>
+
+    <!--
+    ########################################################################
+    MICRO TESTS
+    ########################################################################
+    -->
+
+    <target name="test" description="test once">
+        <antcall target="_java_">
+            <param name="main.class" value="kuda.test.Test"/>
+            <param name="kuda.exp.console" value="true"/>
+            <param name="kuda.exp.clean.before" value="true"/>
+        </antcall>
+    </target>
+
+    <target name="test-kuda" description="test roadrunner">
+        <antcall target="kuda">
+            <param name="kuda.main.class" value="test.Test"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.rrtool" value="kuda"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/micro/classes"/>
+            <param name="kuda.exp.console" value="true"/>
+            <param name="kuda.exp.clean.before" value="true"/>
+        </antcall>
+    </target>
+
+    <target name="test-rr" description="test roadrunner">
+        <antcall target="kuda">
+            <param name="kuda.main.class" value="test.Test"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.rrtool" value="kuda"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/micro/classes"/>
+        </antcall>
+        <antcall target="kuda">
+            <param name="kuda.main.class" value="test.Test"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.rrtool" value="fasttrack"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/micro/classes"/>
+        </antcall>
+        <antcall target="kuda">
+            <param name="kuda.main.class" value="test.Test"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.rrtool" value="hb"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/micro/classes"/>
+        </antcall>
+        <antcall target="kuda">
+            <param name="kuda.main.class" value="test.Test"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.rrtool" value="eraser"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/micro/classes"/>
+        </antcall>
+        <antcall target="kuda">
+            <param name="kuda.main.class" value="test.Test"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.rrtool" value="offline"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/micro/classes"/>
+        </antcall>
+        <antcall target="kuda">
+            <param name="kuda.main.class" value="test.Test"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.rrtool" value="nop"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/micro/classes"/>
+        </antcall>
+    </target>
+
+    <target name="test-rr-offline" description="test roadrunner">
+        <antcall target="kuda">
+            <param name="kuda.main.class" value="test.Test"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/micro/classes"/>
+            <param name="kuda.rrtool" value="offline"/>
+        </antcall>
+    </target>
+    
+    <!--
+    ########################################################################
+    Dining Philosophers
+    ########################################################################
+    -->
+    
+    <target name="phil-1" description="Dining Philosophers">
+		<antcall target="kuda">
+            <param name="kuda.main.class" value="Philo"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/philo/classes"/>
+        </antcall>
+    </target>     
+    
+    <!--
+    ########################################################################
+    BTest
+    ########################################################################
+    -->
+    
+    <target name="btst-1" description="?">
+    	<var name="btst.threads" value=""/>
+    	<if>
+			<equals arg1="${bench.nthreads}" arg2="1"/>
+			<then>
+    			<var name="btst.threads" value=""/>
+    		</then>
+    		<else>
+    			<var name="btst.threads" value="threads"/>
+    		</else>
+    	</if>
+		<antcall target="kuda">
+            <param name="kuda.main.class" value="BTest"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/btest/classes"/>
+            <param name="kuda.main.args" value="${btst.threads}"/>
+        </antcall>
+    </target>
+    
+    <target name="phil-2" description="Dining Philosophers">
+    	<echo message="has no larger input file"/>
+    </target>  
+    <target name="phil-3" description="Dining Philosophers">
+    	<echo message="has no larger input file"/>
+    </target>  
+    <target name="btst-2" description="?">
+    	<echo message="has no larger input file"/>
+    </target>  
+	<target name="btst-3" description="?">
+    	<echo message="has no larger input file"/>
+    </target>  
+    <target name="fojo-2" description="Dining Philosophers">
+    	<echo message="has no larger input file"/>
+    </target>  
+    <target name="fojo-3" description="Dining Philosophers">
+    	<echo message="has no larger input file"/>
+    </target>  
+    <target name="bar-2" description="?">
+    	<echo message="has no larger input file"/>
+    </target>  
+	<target name="bar-3" description="?">
+    	<echo message="has no larger input file"/>
+    </target>  
+    <target name="sync-2" description="?">
+    	<echo message="has no larger input file"/>
+    </target>  
+	<target name="sync-3" description="?">
+    	<echo message="has no larger input file"/>
+    </target> 
+    <target name="mdyn-3" description="?">
+    	<echo message="has no larger input file"/>
+    </target>  
+    <target name="moca-3" description="?">
+    	<echo message="has no larger input file"/>
+    </target>  
+	<target name="rayt-3" description="?">
+    	<echo message="has no larger input file"/>
+    </target>   
+    <target name="sci-3" description="?">
+    	<echo message="has no larger input file"/>
+    </target> 
+    
+	<!--
+    ########################################################################
+    Parallel Colt
+    ########################################################################
+    
+    
+    <target name="colt-1" description="Cern Benchmark">
+		<antcall target="kuda">
+            <param name="kuda.main.class" value="cern.colt.AllTests"/>
+            <param name="kuda.work.dir" value="${kuda.home.java}/work"/>
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/ParallelColt/parallelcolt-0.9.4.jar:${colt.cp}"/>
+            <param name="kuda.main.args" value=""/>
+        </antcall>
+    </target>
+	-->
+	
+    <!--
+    ########################################################################
+    JAVA GRANDE BENCHMARKS - 1) Multithreaded v1.0
+    ########################################################################
+    -->
+
+    <target name="jgf1" description="multithreaded JGF ">
+        <antcall target="kuda">
+            <param name="kuda.bench.classpath" value="${kuda.home.java}/bench/jgf_v1/jgf_v1.jar"/>
+            <param name="kuda.main.args" value="${bench.nthreads}"/>
+        </antcall>
+    </target>
+
+    <target name="fojo-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFForkJoinBench"/>
+        </antcall>
+    </target>
+
+    <target name="bar-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFBarrierBench"/>
+        </antcall>
+    </target>
+
+    <target name="sync-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSyncBench"/>
+        </antcall>
+    </target>
+
+    <target name="crpt-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFCryptBenchSizeA"/>
+        </antcall>
+    </target>
+
+    <target name="lufa-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFLUFactBenchSizeA"/>
+        </antcall>
+    </target>
+
+    <target name="four-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSeriesBenchSizeA"/>
+        </antcall>
+    </target>
+
+    <target name="sor-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSORBenchSizeA"/>
+        </antcall>
+    </target>
+
+    <target name="spmm-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSparseMatmultBenchSizeA"/>
+        </antcall>
+    </target>
+    
+    <target name="crpt-2">
+        <!--antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFCryptBenchSizeB"/>
+        </antcall-->
+	<!--GC overhead limit exceeded-->
+    </target>
+
+    <target name="lufa-2">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFLUFactBenchSizeB"/>
+        </antcall>
+    </target>
+
+    <target name="four-2">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSeriesBenchSizeB"/>
+        </antcall>
+    </target>
+
+    <target name="sor-2">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSORBenchSizeB"/>
+        </antcall>
+    </target>
+
+    <target name="spmm-2">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSparseMatmultBenchSizeB"/>
+        </antcall>
+    </target>
+    
+    
+    <target name="crpt-3">
+        <!--antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFCryptBenchSizeC"/>
+        </antcall-->
+	<!--GC overhead limit exceeded-->
+    </target>
+
+    <target name="lufa-3">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFLUFactBenchSizeC"/>
+        </antcall>
+    </target>
+
+    <target name="four-3">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSeriesBenchSizeC"/>
+        </antcall>
+    </target>
+
+    <target name="sor-3">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSORBenchSizeC"/>
+        </antcall>
+    </target>
+
+    <target name="spmm-3">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFSparseMatmultBenchSizeC"/>
+        </antcall>
+    </target>
+
+
+    <target name="mdyn-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFMolDynBenchSizeA"/>
+        </antcall>
+    </target>
+        
+    <target name="mdyn-2">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFMolDynBenchSizeB"/>
+        </antcall>
+    </target>
+
+    <target name="moca-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFMonteCarloBenchSizeA"/>
+        </antcall>
+    </target>
+    
+    <target name="moca-2">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFMonteCarloBenchSizeB"/>
+        </antcall>
+    </target>
+
+    <target name="rayt-1">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFRayTracerBenchSizeA"/>
+        </antcall>
+    </target>
+
+    <target name="rayt-2">
+        <antcall target="jgf1">
+            <param name="kuda.main.class" value="JGFRayTracerBenchSizeB"/>
+        </antcall>
+    </target>
+    <!--
+    ########################################################################
+    TSP BENCHMARK #!# revisit for better inputs
+    ########################################################################
+    -->
+
+    <target name="tsp">
+        <property name="tsp.files" value="${tsp.home}/tspfiles/"/>
+        <property name="tsp.bench.size" value="map10"/>
+        <antcall target="kuda">
+            <param name="kuda.bench.classpath" value="${tsp.home}/tsp.jar"/>
+            <param name="kuda.main.args" value="${tsp.files}/${tsp.bench.size} ${bench.nthreads}"/>
+            <param name="kuda.main.class" value="Tsp"/>
+        </antcall>
+    </target>
+
+    <target name="tsp1-1">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map4"/>
+        </antcall>
+    </target>
+
+    <target name="tsp1-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map5"/>
+        </antcall>
+    </target>
+
+    <target name="tsp1-3">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile4"/>
+        </antcall>
+    </target>
+
+    <target name="tsp2-1">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map10"/>
+        </antcall>
+    </target>
+
+    <target name="tsp2-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map12"/>
+        </antcall>
+    </target>
+
+    <target name="tsp2-3">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map13"/>
+        </antcall>
+    </target>
+
+    <target name="tsp3-1">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map14"/>
+        </antcall>
+    </target>
+
+ 	<target name="tsp3-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map15"/>
+        </antcall>
+    </target>
+    
+    <target name="tsp3-3">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map15b"/>
+        </antcall>
+    </target>
+
+	<target name="tsp4-1">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map15c"/>
+        </antcall>
+    </target>
+
+    <target name="tsp4-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map16"/>
+        </antcall>
+    </target>
+
+    <target name="tsp4-3">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map16c"/>
+        </antcall>
+    </target>
+
+    <target name="tsp5-1">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="map16z"/>
+        </antcall>
+    </target>
+
+    <target name="tsp5-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile6"/>
+        </antcall>
+    </target>
+
+    <target name="tsp5-3">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile7"/>
+        </antcall>
+    </target>
+
+    <target name="tsp6-1">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile8"/>
+        </antcall>
+    </target>
+
+ 	<target name="tsp6-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile8.0"/>
+        </antcall>
+    </target>
+    
+    <target name="tsp6-3">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile9"/>
+        </antcall>
+    </target>
+    
+    <target name="tsp7-1">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile9.0"/>
+        </antcall>
+    </target>
+
+ 	<target name="tsp7-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile16.large"/>
+        </antcall>
+    </target>
+    
+    <target name="tsp7-3">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile17.large"/>
+        </antcall>
+    </target>
+
+	<target name="tsp8-1">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile18"/>
+        </antcall>
+    </target>
+
+    <target name="tsp8-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile18b"/>
+        </antcall>
+    </target>
+
+    <target name="tsp8-3">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile19.large"/>
+        </antcall>
+    </target>
+
+    <target name="tsp9-1">
+        <!--antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile5"/>
+        </antcall-->
+        <!--Bu inputta tsp benchmark crash ediyor :) ...-->
+        <!--Bu inputta jvm permgen outofmemory veriyor :) ...-->
+    </target>
+
+    <target name="tsp9-2">
+        <!--antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile19b"/>
+        </antcall-->
+        <!--Bu inputta tsp benchmark crash ediyor :) ...-->
+        <!--Bu inputta jvm permgen outofmemory veriyor :) ...-->
+    </target>
+
+    <target name="tsp9-3">
+        <!--antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile19c"/>
+        </antcall-->
+        <!--Bu inputta ise benchmark deadlock oluyor :) ...-->
+    </target>
+
+    <target name="tspx-1">
+        <!--antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile20"/>
+        </antcall-->
+        <!--Bu inputta tsp benchmark crash ediyor :) ...-->
+        <!--Bu inputta jvm permgen outofmemory veriyor :) ...-->
+    </target>
+
+ 	<target name="tspx-2">
+        <antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile20.large"/>
+        </antcall>
+    </target>
+    
+    <target name="tspx-3">
+        <!--antcall target="tsp">
+            <param name="tsp.bench.size" value="tspfile25"/>
+        </antcall-->
+        <!--Bu inputta jvm permgen outofmemory veriyor :) ...-->
+        <!--Bu inputta tsp benchmark crash ediyor :) ...-->
+    </target>
+
+    <!--
+    ########################################################################
+    Galois BENCHMARK
+    ########################################################################
+    -->
+
+    <target name="gal">
+        <property name="gal.bench.size" value=""/>
+        <property name="GAL_CP" refid="gal.cp"/>
+        <antcall target="kuda">
+            <param name="kuda.bench.classpath" value="${GAL_CP}"/>
+            <param name="kuda.main.args"
+                   value="-t ${bench.nthreads} ${gal.bench}.main.Main ${gal.home}/input/${gal.bench}/${gal.bench.input}${gal.bench.size}"/>
+            <param name="kuda.main.class" value="galois.runtime.GaloisRuntime"/>
+        </antcall>
+    </target>
+
+    <target name="bhut-1">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="BarnesHut"/>
+            <param name="gal.bench" value="barneshut"/>
+            <param name="gal.bench.size" value="A.in"/>
+        </antcall>
+    </target>
+
+    <target name="bhut-2">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="BarnesHut"/>
+            <param name="gal.bench" value="barneshut"/>
+            <param name="gal.bench.size" value="B.in"/>
+        </antcall>
+    </target>
+
+    <target name="bhut-3">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="BarnesHut"/>
+            <param name="gal.bench" value="barneshut"/>
+            <param name="gal.bench.size" value="C.in"/>
+        </antcall>
+    </target>
+
+    <target name="dref-1">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="large.2"/>
+            <param name="gal.bench" value="delaunayrefinement"/>
+            <param name="gal.bench.size" value=""/>
+        </antcall>
+    </target>
+
+    <target name="dref-2">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="massive.2"/>
+            <param name="gal.bench" value="delaunayrefinement"/>
+            <param name="gal.bench.size" value=""/>
+        </antcall>
+    </target>
+
+    <target name="dref-3">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="250k.2"/>
+            <param name="gal.bench" value="delaunayrefinement"/>
+            <param name="gal.bench.size" value=""/>
+        </antcall>
+    </target>
+
+    <target name="dtri-1">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="png0.txt.gz"/>
+            <param name="gal.bench" value="delaunaytriangulation"/>
+            <param name="gal.bench.size" value=""/>
+        </antcall>
+    </target>
+
+    <target name="dtri-2">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="bike.txt.gz"/>
+            <param name="gal.bench" value="delaunaytriangulation"/>
+            <param name="gal.bench.size" value=""/>
+        </antcall>
+    </target>
+
+    <target name="dtri-3">
+        <antcall target="gal">
+            <param name="gal.bench.input" value="random10000.txt.gz"/>
+            <param name="gal.bench" value="delaunaytriangulation"/>
+            <param name="gal.bench.size" value=""/>
+        </antcall>
+    </target>
+
+    <!--
+    ########################################################################
+    Scimark2 BENCHMARK
+    ########################################################################
+    -->
+
+    <target name="sci">
+        <property name="sci.bench.size" value=""/>
+        <property name="SCI_CP" refid="sci.cp"/>
+        <antcall target="kuda">
+            <param name="kuda.bench.classpath" value="${SCI_CP}"/>
+            <param name="kuda.main.args" value="${sci.bench.size}"/>
+            <param name="kuda.main.class" value="jnt.scimark2.commandline"/>
+        </antcall>
+    </target>
+
+    <target name="sci-1">
+        <antcall target="sci">
+            <param name="sci.bench.size" value=""/>
+        </antcall>
+    </target>
+
+    <target name="sci-2">
+        <antcall target="sci">
+            <param name="sci.bench.size" value="-large"/>
+        </antcall>
+    </target>
+
+    <!--
+    ########################################################################
+    DACAPO BENCHMARKS
+    ########################################################################
+    -->
+
+    <target name="dacapo">
+        <fail unless="dacapo.bench"/>
+        <property name="dacapo.bench.size" value="small"/>
+        <property name="DCP_CP" refid="dcp.cp"/>
+        <antcall target="kuda">
+            <param name="kuda.bench.classpath" value="${DCP_CP}"/>
+            <param name="kuda.main.args" value="${dacapo.bench} -s ${dacapo.bench.size}"/>
+            <param name="kuda.main.class" value="Harness"/>
+        </antcall>
+    </target>
+
+    <target name="avr-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="avrora"/>
+        </antcall>
+    </target>
+
+    <target name="btk-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="batik"/>
+        </antcall>
+    </target>
+
+    <target name="clps-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="eclipse"/>
+        </antcall>
+    </target>
+
+    <target name="fop-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="fop"/>
+        </antcall>
+    </target>
+
+    <target name="h2-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="h2"/>
+        </antcall>
+    </target>
+
+    <target name="jyth-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="jython"/>
+        </antcall>
+    </target>
+
+    <target name="lui-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="luindex"/>
+        </antcall>
+    </target>
+
+    <target name="lus-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="lusearch"/>
+        </antcall>
+    </target>
+
+    <target name="pmd-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="pmd"/>
+        </antcall>
+    </target>
+
+    <target name="flow-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="sunflow"/>
+        </antcall>
+    </target>
+
+    <target name="tcat-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tomcat"/>
+        </antcall>
+    </target>
+
+    <target name="bean-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tradebeans"/>
+        </antcall>
+    </target>
+
+    <target name="soap-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tradesoap"/>
+        </antcall>
+    </target>
+
+    <target name="xlan-1">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="xalan"/>
+        </antcall>
+    </target>
+    
+ 
+    <target name="avr-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="avrora"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="btk-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="batik"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="clps-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="eclipse"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="fop-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="fop"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="h2-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="h2"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="jyth-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="jython"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="lui-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="luindex"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="lus-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="lusearch"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="pmd-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="pmd"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="flow-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="sunflow"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="tcat-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tomcat"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="bean-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tradebeans"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="soap-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tradesoap"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+    <target name="xlan-2">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="xalan"/>
+            <param name="dacapo.bench.size" value="default"/>
+        </antcall>
+    </target>
+
+
+
+
+    <target name="avr-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="avrora"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="btk-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="batik"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="clps-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="eclipse"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="fop-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="fop"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="h2-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="h2"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="jyth-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="jython"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="lui-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="luindex"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="lus-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="lusearch"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="pmd-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="pmd"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="flow-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="sunflow"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="tcat-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tomcat"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="bean-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tradebeans"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="soap-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tradesoap"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+    <target name="xlan-3">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="xalan"/>
+            <param name="dacapo.bench.size" value="large"/>
+        </antcall>
+    </target>
+
+
+    <target name="h2-4">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="h2"/>
+            <param name="dacapo.bench.size" value="huge"/>
+        </antcall>
+    </target>
+
+    <target name="tcat-4">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tomcat"/>
+            <param name="dacapo.bench.size" value="huge"/>
+        </antcall>
+    </target>
+
+    <target name="bean-4">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tradebeans"/>
+            <param name="dacapo.bench.size" value="huge"/>
+        </antcall>
+    </target>
+
+    <target name="soap-4">
+        <antcall target="dacapo">
+            <param name="dacapo.bench" value="tradesoap"/>
+            <param name="dacapo.bench.size" value="huge"/>
+        </antcall>
+    </target>
+
+</project>

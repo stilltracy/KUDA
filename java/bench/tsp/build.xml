@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project basedir="." default="build" name="kuda">
+    <property environment="env"/>
+    <property name="debuglevel" value="source,lines,vars"/>
+    <property name="target" value="1.6"/>
+    <property name="source" value="1.6"/>
+
+    <target name="build" depends="">
+        <echo message="${ant.project.name}: ${ant.file}"/>
+        <delete dir="classes"/>
+        <delete file="tsp.jar"/>
+        <mkdir dir="classes"/>
+        <javac debug="true" debuglevel="${debuglevel}"
+               source="${source}" target="${target}"
+               destdir="classes">
+            <src path="."/>
+            <classpath>
+                <pathelement path="classes"/>
+            </classpath>
+        </javac>
+        <jar basedir="classes" includes="**/*" destfile="tsp.jar"/>
+    </target>
+    
+</project>

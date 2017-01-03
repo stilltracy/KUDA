@@ -1,0 +1,6 @@
+Barnes-hut N-Body Simulation
+============================
+
+To run, navigate to the driver folder.
+
+Then execute either the runwotest.sh or runwithtest.sh script. 
